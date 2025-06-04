@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/BMI/BMImodel.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CART/CartPage.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/MAP/map_card.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/profile_cards.dart';
@@ -66,8 +67,8 @@ class HomePage extends StatelessWidget {
                 SizedBox(height: 30), //Map Card
                 MapCard(),
 
-
-
+                SizedBox(height: 20),
+                BMICard(),
 
               ],
             ),

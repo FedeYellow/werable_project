@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CART/ProviderCart.dart';
 
-
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
 
@@ -34,12 +33,25 @@ class CartPage extends StatelessWidget {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Totale: €${cart.total.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Totale: €${cart.total.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      Text(
+                        'Calorie: ${cart.totalCalories} kcal',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

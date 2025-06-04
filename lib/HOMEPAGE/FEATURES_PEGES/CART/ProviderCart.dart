@@ -21,6 +21,12 @@ class CartProvider extends ChangeNotifier {
     return _products.fold(0.0, (sum, item) => sum + double.parse(item.price));
   }
 
+  int get totalCalories {
+  return _products.fold(0, (sum, item) => sum + item.calories);
+  }
+   
+
+
   void clear() {
     _products.clear();
     notifyListeners();

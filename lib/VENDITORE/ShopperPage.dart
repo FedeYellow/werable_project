@@ -29,7 +29,7 @@ class ShopperPage extends StatelessWidget {
             child: ListTile(
               leading: const Icon(Icons.fastfood),
               title: Text(product.name),
-              subtitle: Text('Scadenza: ${product.expiry}\nPrezzo: €${product.price}'),
+              subtitle: Text('Scadenza: ${product.expiry}\nPrezzo: €${product.price}\nCalorie: ${product.calories} kcal'),
               trailing: IconButton(
                 icon: const Icon(Icons.add_shopping_cart),
                 onPressed: () {
@@ -38,6 +38,7 @@ class ShopperPage extends StatelessWidget {
                     price: product.price,
                     expiry: product.expiry,
                     shopperName: shopper.name,
+                    calories: product.calories,
                   );
                   cart.add(productWithShop);
                   ScaffoldMessenger.of(context).showSnackBar(
