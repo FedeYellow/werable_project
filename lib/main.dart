@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CART/ProviderCart.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/DISTANCE/DistanceProvider.dart';
 import 'package:werable_project/HOMEPAGE/HomePage.dart';
 import 'package:werable_project/LOGIN/LoginPage.dart';
 import 'package:werable_project/LOGIN/RegistrationPage.dart';
 
 
 void main() {
-  runApp(ChangeNotifierProvider(
-    create: (_) => CartProvider(),
-    child: MyApp(),
-      ),
-    );
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => CartProvider()),
+      ChangeNotifierProvider(create: (_) => DistanceProvider()), 
+    ],
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {

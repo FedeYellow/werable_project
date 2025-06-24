@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.7.2
+  sdk: '>=2.17.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -18,6 +18,10 @@ dependencies:
   latlong2: ^0.9.0
   provider: ^6.1.1
   syncfusion_flutter_gauges: ^29.2.8
+  syncfusion_flutter_charts: 
+  jwt_decoder: ^2.0.1
+  intl:
+
   
 
 dev_dependencies:
