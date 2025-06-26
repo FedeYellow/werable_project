@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/CaloriesProvider.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CART/ProviderCart.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/DISTANCE/DistanceProvider.dart';
 import 'package:werable_project/HOMEPAGE/HomePage.dart';
@@ -12,7 +13,8 @@ void main() {
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => CartProvider()),
-      ChangeNotifierProvider(create: (_) => DistanceProvider()), 
+      ChangeNotifierProvider(create: (_) => DistanceProvider()),
+      ChangeNotifierProvider(create: (_) => Caloriesprovider()),  
     ],
     child: const MyApp(),
   ));

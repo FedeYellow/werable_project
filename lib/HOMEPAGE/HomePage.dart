@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/BMI/BMImodel.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/CaloriesCard.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CART/CartPage.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/DISTANCE/DistanceCard.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/MAP/map_card.dart';
@@ -72,6 +73,7 @@ class HomePage extends StatelessWidget {
                 BMICard(),
 
                 DistanceCard(),
+                Caloriescard(),
 
               ],
             ),

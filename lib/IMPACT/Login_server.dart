@@ -15,6 +15,7 @@ class Impact{
 
   static const String patientUsername = 'Jpefaq6m58';
   static const String distanceEndpoint = 'data/v1/steps/patients/';
+  static const String caloriesEndpoint = 'data/v1/calories/patients/';
 
   
   static String username = '<YOUR_USERNAME>';
@@ -104,6 +105,39 @@ class Impact{
 
     //Create the (representative) request
     final url = Impact.baseUrl + distanceEndpoint + patientUsername + '/day/$day/';
+    final headers = {HttpHeaders.authorizationHeader: 'Bearer $access'};
+    print(url);
+
+    //Get the response
+    print('Calling: $url');
+    final response = await http.get(Uri.parse(url), headers: headers);
+    
+    //if OK parse the response, otherwise return null
+    var result = null;
+    if (response.statusCode == 200) {
+      result = jsonDecode(response.body);
+    } //if
+
+    //Return the result
+    return result;
+
+  } //_requestData
+
+  //This method allows to obtain the JWT token pair from IMPACT and store it in SharedPreferences
+  static Future<dynamic> fetchCaloriesData(String day) async {
+
+    //Get the stored access token (Note that this code does not work if the tokens are null)
+    final sp = await SharedPreferences.getInstance();
+    var access = sp.getString('access');
+
+    //If access token is expired, refresh it
+    if(JwtDecoder.isExpired(access!)){
+      await Impact.refreshTokens();
+      access = sp.getString('access');
+    }//if
+
+    //Create the (representative) request
+    final url = Impact.baseUrl + caloriesEndpoint + patientUsername + '/day/$day/';
     final headers = {HttpHeaders.authorizationHeader: 'Bearer $access'};
     print(url);
 
