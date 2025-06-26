@@ -4,7 +4,7 @@ import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/BMI/BMImodel.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CART/CartPage.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/DISTANCE/DistanceCard.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/MAP/map_card.dart';
-import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/profile_cards.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/PROFILE_CARD/profile_cards.dart';
 import 'package:werable_project/LOGIN/LoginPage.dart';
 
 

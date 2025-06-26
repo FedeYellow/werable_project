@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'dart:convert';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/BMI/BMIDetails.dart';
 
 class BMICard extends StatefulWidget {
   const BMICard({super.key});
@@ -40,10 +41,10 @@ class _BMICardState extends State<BMICard> {
   }
 
   String _classifyBMI(double bmi) {
-    if (bmi < 18.5) return 'Sottopeso';
-    if (bmi < 25) return 'Normale';
-    if (bmi < 30) return 'Sovrappeso';
-    return 'Obeso';
+    if (bmi < 18.5) return 'Underweight';
+    if (bmi < 25) return 'Normal';
+    if (bmi < 30) return 'Overweight';
+    return 'Obese';
   }
 
   @override
@@ -53,12 +54,12 @@ class _BMICardState extends State<BMICard> {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: bmi == null
-            ? const Text('BMI non disponibile: dati mancanti o non validi')
+            ? const Text('BMI not available: missing or invalid data')
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Indice di Massa Corporea (BMI)',
+                    'Body Mass Index (BMI)',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -67,10 +68,10 @@ class _BMICardState extends State<BMICard> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
-                      Text('Sottopeso', style: TextStyle(fontSize: 12)),
-                      Text('Normale', style: TextStyle(fontSize: 12)),
-                      Text('Sovrappeso', style: TextStyle(fontSize: 12)),
-                      Text('Obeso', style: TextStyle(fontSize: 12)),
+                      Text('Underweight', style: TextStyle(fontSize: 12)),
+                      Text('Normal', style: TextStyle(fontSize: 12)),
+                      Text('Overweight', style: TextStyle(fontSize: 12)),
+                      Text('Obese', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -113,7 +114,22 @@ class _BMICardState extends State<BMICard> {
                   ),
 
                   const SizedBox(height: 12),
-                  Text('BMI: ${bmi!.toStringAsFixed(1)} - Stato: $status'),
+                  Text('BMI: ${bmi!.toStringAsFixed(1)} - Status: $status'), // valor de BMI redondeado a 1 decimal + estado de salud
+                
+                  // COSECHA --> BOTON PARA MAS INFO
+                  const SizedBox(height: 8),
+
+                  Align(
+                    alignment: Alignment.center,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => BMIDetails(bmi: bmi!)));
+                      },
+                      child: Text('More information'),
+                    )
+
+                  )
+                
                 ],
               ),
       ),
