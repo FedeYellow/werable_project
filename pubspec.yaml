@@ -21,6 +21,7 @@ dependencies:
   syncfusion_flutter_charts: 
   jwt_decoder: ^2.0.1
   intl:
+  
 
   
 

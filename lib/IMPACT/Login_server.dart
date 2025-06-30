@@ -154,7 +154,40 @@ class Impact{
     //Return the result
     return result;
 
-  } //_requestData
+  }
+  
+  
+  static Future<dynamic> fetchCaloriesWeekData(String startDate, String endDate) async {
+  // Ottieni token JWT
+  final sp = await SharedPreferences.getInstance();
+  var access = sp.getString('access');
+
+  // Refresh se scaduto
+  if (JwtDecoder.isExpired(access!)) {
+    await Impact.refreshTokens();
+    access = sp.getString('access');
+  }
+
+  // Costruzione URL manuale con somma di stringhe
+  final url = Impact.baseUrl + caloriesEndpoint + patientUsername + '/daterange/start_date/' + startDate + '/end_date/' + endDate +'/';
+  print(url);
+
+  final headers = {HttpHeaders.authorizationHeader: 'Bearer $access'};
+  print('Calling: ' + url);
+
+  // Richiesta GET
+  final response = await http.get(Uri.parse(url), headers: headers);
+
+  // Parsing risposta
+  if (response.statusCode == 200) {
+    final result = jsonDecode(response.body);
+    return result;
+  } else {
+    print('Errore nel fetch: ${response.statusCode}');
+    return null;
+  }
+}
+ //_requestData
 
  
  
