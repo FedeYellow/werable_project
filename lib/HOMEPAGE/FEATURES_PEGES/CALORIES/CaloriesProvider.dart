@@ -8,10 +8,9 @@ class Caloriesprovider extends ChangeNotifier {
   List<Caloriesdata> calories = [];
   List<CaloriesWeekData> weeklyCalories = [];
 
-  // Mappa di calorie giornaliere salvate
   Map<String, int> dailyCaloriesMap = {};
+  bool isWeekDataLoaded = false;
 
-  // Metodo esistente per dati da server
   void fetchData(String day) async {
     final data = await Impact.fetchCaloriesData(day);
     if (data != null) {
@@ -28,18 +27,28 @@ class Caloriesprovider extends ChangeNotifier {
     final data = await Impact.fetchCaloriesWeekData(startDate, endDate);
     if (data != null) {
       weeklyCalories.clear();
+      dailyCaloriesMap.clear();
 
       for (var day in data['data']) {
         String date = day['date'];
         for (var item in day['data']) {
-          weeklyCalories.add(CaloriesWeekData.fromJsonWithDate(date, item));
+          final entry = CaloriesWeekData.fromJsonWithDate(date, item);
+          weeklyCalories.add(entry);
+
+          final key = entry.date.toIso8601String().split('T').first;
+          dailyCaloriesMap.update(
+            key,
+            (value) => value + entry.value,
+            ifAbsent: () => entry.value,
+          );
         }
       }
+
+      isWeekDataLoaded = true;
       notifyListeners();
     }
   }
 
-  // Nuova funzione: carica da SharedPreferences i dati giornalieri salvati
   Future<void> loadDailyCaloriesFromPrefs(List<DateTime> weekDates) async {
     final prefs = await SharedPreferences.getInstance();
     Map<String, int> loadedData = {};
@@ -52,7 +61,6 @@ class Caloriesprovider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Getter per i dati giornalieri
   int getDailyCalories(String dateKey) {
     return dailyCaloriesMap[dateKey] ?? 0;
   }
@@ -61,6 +69,7 @@ class Caloriesprovider extends ChangeNotifier {
     calories.clear();
     weeklyCalories.clear();
     dailyCaloriesMap.clear();
+    isWeekDataLoaded = false;
     notifyListeners();
   }
 }

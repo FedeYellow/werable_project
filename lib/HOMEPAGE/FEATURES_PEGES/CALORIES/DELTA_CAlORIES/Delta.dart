@@ -19,44 +19,15 @@ class _WeeklyCaloriesDeltaChartCardState extends State<WeeklyCaloriesDeltaChartC
   int totalDelta = 0;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _prepareChartData();
-  }
-
-  void _prepareChartData() {
+  Widget build(BuildContext context) {
     final provider = context.watch<Caloriesprovider>();
 
-    final now = DateTime.now();
-    final yesterday = now.subtract(const Duration(days: 1));
-    final monday = yesterday.subtract(Duration(days: yesterday.weekday - 1));
-    final fullWeek = List.generate(8, (i) => monday.add(Duration(days: i)));
-
-    List<_DayDelta> tempData = [];
-    int tempTotalDelta = 0;
-
-    for (final date in fullWeek) {
-      final key = dateFormat.format(date);
-      final caloriesOut = provider.getDailyCalories(key);
-
-      final delta = (caloriesOut > 0) ? fixedCaloriesIn - caloriesOut : 0;
-
-      tempTotalDelta += delta;
-
-      final label = '${DateFormat.E('en_US').format(date)}\n${date.day}';
-      tempData.add(_DayDelta(day: label, delta: delta));
+    if (!provider.isWeekDataLoaded) {
+      return const Center(child: CircularProgressIndicator());
     }
 
-    setState(() {
-      chartData = tempData;
-      totalDelta = tempTotalDelta;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     if (chartData.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      _prepareChartData(provider);
     }
 
     String nutritionStatus;
@@ -124,6 +95,33 @@ class _WeeklyCaloriesDeltaChartCardState extends State<WeeklyCaloriesDeltaChartC
         ),
       ),
     );
+  }
+
+  void _prepareChartData(Caloriesprovider provider) {
+    final now = DateTime.now();
+    final yesterday = now.subtract(const Duration(days: 1));
+    final monday = yesterday.subtract(Duration(days: yesterday.weekday - 1));
+    final fullWeek = List.generate(8, (i) => monday.add(Duration(days: i)));
+
+    List<_DayDelta> tempData = [];
+    int tempTotalDelta = 0;
+
+    for (final date in fullWeek) {
+      final key = dateFormat.format(date);
+      final caloriesOut = provider.getDailyCalories(key);
+
+      final delta = (caloriesOut > 0) ? fixedCaloriesIn - caloriesOut : 0;
+
+      tempTotalDelta += delta;
+
+      final label = '${DateFormat.E('en_US').format(date)}\n${date.day}';
+      tempData.add(_DayDelta(day: label, delta: delta));
+    }
+
+    setState(() {
+      chartData = tempData;
+      totalDelta = tempTotalDelta;
+    });
   }
 }
 
