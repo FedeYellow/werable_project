@@ -1,9 +1,10 @@
+// CaloriesChartWeekCard.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/CaloriesProvider.dart';
-
 
 class WeeklyCaloriesChartCard extends StatefulWidget {
   const WeeklyCaloriesChartCard({super.key});
@@ -13,77 +14,151 @@ class WeeklyCaloriesChartCard extends StatefulWidget {
 }
 
 class _WeeklyCaloriesChartCardState extends State<WeeklyCaloriesChartCard> {
+  int? bmr;
+  final dateFormat = DateFormat('yyyy-MM-dd');
+
   @override
   void initState() {
     super.initState();
+    _loadBmr();
 
     final today = DateTime.now();
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));;
-    final start = today.subtract(const Duration(days: 6));
-    final startStr = DateFormat('yyyy-MM-dd').format(start);
-    final endStr = DateFormat('yyyy-MM-dd').format(yesterday);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final start = yesterday.subtract(const Duration(days: 7));
+    final startStr = dateFormat.format(start);
+    final endStr = dateFormat.format(yesterday);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<Caloriesprovider>().fetchWeekData(startStr, endStr);
     });
   }
 
+  Future<void> _loadBmr() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedBmr = prefs.getInt('bmr');
+    if (storedBmr != null) {
+      setState(() {
+        bmr = storedBmr;
+      });
+    }
+  }
+
+  Future<void> _saveDailyCaloriesMap(List<_DayCalories> chartData, List<DateTime> fullWeek) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    for (int i = 0; i < chartData.length; i++) {
+      final key = dateFormat.format(fullWeek[i]);
+      await prefs.setInt('daily_total_calories_$key', chartData[i].calories);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final weeklyData = context.watch<Caloriesprovider>().weeklyCalories;
+    final weekData = context.watch<Caloriesprovider>().weeklyCalories;
+    final now = DateTime.now();
 
-    // Somma calorie per giorno
-    final Map<DateTime, int> dailyTotals = {};
-    for (var entry in weeklyData) {
-      final dateOnly = DateTime(entry.date.year, entry.date.month, entry.date.day);
-      dailyTotals.update(dateOnly, (prev) => prev + entry.value, ifAbsent: () => entry.value);
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    final fullWeek = List.generate(8, (i) => monday.add(Duration(days: i)));
+
+    final labelFormat = DateFormat.E('en_US');
+
+    final dailyTotals = <String, int>{};
+    for (final entry in weekData) {
+      final key = dateFormat.format(entry.date);
+      dailyTotals[key] = (dailyTotals[key] ?? 0) + entry.value;
     }
 
-    // Trasforma in lista per il grafico
-    final List<_DayCalories> chartData = dailyTotals.entries
-        .map((e) => _DayCalories(day: e.key, total: e.value))
-        .toList()
-      ..sort((a, b) => a.day.compareTo(b.day));
+    final chartData = fullWeek.map((date) {
+      final key = dateFormat.format(date);
+      final label = '${labelFormat.format(date)}\n${date.day}';
+
+      int value;
+      Color color;
+
+      if (_isSameDay(date, now)) {
+        final hasData = dailyTotals.containsKey(key);
+        value = hasData ? dailyTotals[key]! : (bmr ?? 0);
+        color = hasData ? Colors.blue : Colors.grey;
+      } else if (date.isBefore(now)) {
+        value = dailyTotals[key] ?? 0;
+        color = Colors.blue;
+      } else {
+        value = 0;
+        color = Colors.blue.shade100;
+      }
+
+      return _DayCalories(day: label, calories: value, color: color);
+    }).toList();
+
+    _saveDailyCaloriesMap(chartData, fullWeek);
 
     return Card(
-      margin: const EdgeInsets.all(12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            const Text(
-              'Calorie Totali per Giorno (Ultimi 7 giorni)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      margin: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: const [
+                _LegendItem(color: Colors.blue, label: 'Calories'),
+                SizedBox(width: 16),
+                _LegendItem(color: Colors.grey, label: 'BMR'),
+              ],
             ),
-            const SizedBox(height: 10),
-            SfCartesianChart(
-              primaryXAxis: CategoryAxis(
-                title: AxisTitle(text: 'Giorno'),
-              ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SfCartesianChart(
+              title: ChartTitle(text: 'Weekly Calories'),
+              primaryXAxis: CategoryAxis(),
               primaryYAxis: NumericAxis(
-                title: AxisTitle(text: 'Calorie'),
+                title: AxisTitle(text: 'Calories (kcal)'),
               ),
               tooltipBehavior: TooltipBehavior(enable: true),
+              legend: Legend(isVisible: false),
               series: <CartesianSeries<_DayCalories, String>>[
-                LineSeries<_DayCalories, String>(
+                ColumnSeries<_DayCalories, String>(
                   dataSource: chartData,
-                  xValueMapper: (data, _) => DateFormat.E().format(data.day),
-                  yValueMapper: (data, _) => data.total,
+                  xValueMapper: (data, _) => data.day,
+                  yValueMapper: (data, _) => data.calories,
+                  pointColorMapper: (data, _) => data.color,
                   dataLabelSettings: const DataLabelSettings(isVisible: true),
-                  markerSettings: const MarkerSettings(isVisible: true),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
 class _DayCalories {
-  final DateTime day;
-  final int total;
+  final String day;
+  final int calories;
+  final Color color;
 
-  _DayCalories({required this.day, required this.total});
+  _DayCalories({required this.day, required this.calories, required this.color});
+}
+
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _LegendItem({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(width: 12, height: 12, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
+    );
+  }
 }

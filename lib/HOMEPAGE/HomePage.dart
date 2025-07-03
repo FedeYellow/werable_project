@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/BMI/BMImodel.dart';
-import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/CaloriesCard.dart';
-import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/CaloriesChartCard.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/DELTA_CAlORIES/Delta.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/WEEK/CaloriesChartWeekCard.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CART/CartPage.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/DISTANCE/DistanceCard.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/MAP/map_card.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/PROFILE_CARD/profile_cards.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/RECOMMENDED_CALORIES/PalCard.dart';
 import 'package:werable_project/LOGIN/LoginPage.dart';
 
 
@@ -75,9 +75,9 @@ class HomePage extends StatelessWidget {
                 BMICard(),
 
                 DistanceCard(),
-                Caloriescard(),
-                CaloriesChartCard(),
-                WeeklyCaloriesChartCard()
+                CaloricRequirementCard(),
+                WeeklyCaloriesChartCard(),
+                WeeklyCaloriesDeltaChartCard(),
 
               ],
             ),

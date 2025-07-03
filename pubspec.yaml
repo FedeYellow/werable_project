@@ -17,10 +17,11 @@ dependencies:
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
   provider: ^6.1.1
-  syncfusion_flutter_gauges: ^29.2.8
+  syncfusion_flutter_gauges:
   syncfusion_flutter_charts: 
   jwt_decoder: ^2.0.1
   intl:
+  
   
 
   

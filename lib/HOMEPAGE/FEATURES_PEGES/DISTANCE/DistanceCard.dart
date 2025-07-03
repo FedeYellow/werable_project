@@ -27,21 +27,21 @@ class _DistanceCardState extends State<DistanceCard> {
 
   @override
   Widget build(BuildContext context) {
-    final distanceList = context.watch<DistanceProvider>().distance;
+    final distanceList = context.watch<DistanceProvider>().distances;
 
-    double totalKm = _calcolaDistanzaTotale(distanceList);
+    int Step = _calcolaDistanzaTotale(distanceList);
 
     return Card(
       margin: const EdgeInsets.all(12),
       child: ListTile(
         title: const Text('Distanza Totale di Ieri'),
-        subtitle: Text('${totalKm.toStringAsFixed(2)} km'),
+        subtitle: Text('${Step.toStringAsFixed(0)} Steps'),
       ),
     );
   }
 
-  double _calcolaDistanzaTotale(List<Distancedata> lista) {
-    int totaleMetri = lista.fold(0, (somma, item) => somma + item.value);
-    return totaleMetri / 1000.0;
+  int _calcolaDistanzaTotale(List<Distancedata> lista) {
+    int totalSteps = lista.fold(0, (somma, item) => somma + item.value);
+    return totalSteps;
   }
 }
