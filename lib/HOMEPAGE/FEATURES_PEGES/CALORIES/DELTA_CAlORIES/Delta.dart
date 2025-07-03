@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/CaloriesProvider.dart';
 
 class WeeklyCaloriesDeltaChartCard extends StatefulWidget {
   const WeeklyCaloriesDeltaChartCard({super.key});
@@ -18,20 +19,13 @@ class _WeeklyCaloriesDeltaChartCardState extends State<WeeklyCaloriesDeltaChartC
   int totalDelta = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _loadData();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _prepareChartData();
   }
 
-  @override
-  void reassemble() {
-    super.reassemble();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final bmr = prefs.getInt('bmr') ?? 0;
+  void _prepareChartData() {
+    final provider = context.watch<Caloriesprovider>();
 
     final now = DateTime.now();
     final yesterday = now.subtract(const Duration(days: 1));
@@ -43,31 +37,20 @@ class _WeeklyCaloriesDeltaChartCardState extends State<WeeklyCaloriesDeltaChartC
 
     for (final date in fullWeek) {
       final key = dateFormat.format(date);
-      final caloriesOut = prefs.getInt('daily_total_calories_$key') ?? 0;
+      final caloriesOut = provider.getDailyCalories(key);
 
-      final delta = (caloriesOut > 0 && caloriesOut != bmr)
-          ? fixedCaloriesIn - caloriesOut
-          : 0;
+      final delta = (caloriesOut > 0) ? fixedCaloriesIn - caloriesOut : 0;
 
       tempTotalDelta += delta;
 
       final label = '${DateFormat.E('en_US').format(date)}\n${date.day}';
-
       tempData.add(_DayDelta(day: label, delta: delta));
     }
 
-    if (mounted) {
-      setState(() {
-        chartData = tempData;
-        totalDelta = tempTotalDelta;
-      });
-    }
-  }
-
-  void _openNutritionInfo() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const NutritionInfoPage()),
-    );
+    setState(() {
+      chartData = tempData;
+      totalDelta = tempTotalDelta;
+    });
   }
 
   @override
@@ -137,11 +120,6 @@ class _WeeklyCaloriesDeltaChartCardState extends State<WeeklyCaloriesDeltaChartC
                 color: Colors.black,
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _openNutritionInfo,
-              child: const Text('Learn about Nutrition Risks'),
-            ),
           ],
         ),
       ),
@@ -154,74 +132,4 @@ class _DayDelta {
   final int delta;
 
   _DayDelta({required this.day, required this.delta});
-}
-
-class NutritionInfoPage extends StatelessWidget {
-  const NutritionInfoPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nutrition Risks Information'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Overnutrition Risks',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Overnutrition occurs when calorie intake consistently exceeds the body’s energy requirements. This can lead to:'
-                '\n\n• Overweight and obesity'
-                '\n• Cardiovascular diseases (heart disease, stroke)'
-                '\n• Type 2 diabetes'
-                '\n• Certain types of cancer (e.g., breast, colon)'
-                '\n• Fatty liver disease'
-                '\n• Joint problems and decreased mobility'
-                '\n\nManaging caloric intake and increasing physical activity are essential to prevent these risks.',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(height: 24),
-              Text(
-                'Undernutrition Risks',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Undernutrition results from inadequate calorie consumption to meet the body’s energy demands. Potential health consequences include:'
-                '\n\n• Fatigue and weakness'
-                '\n• Weakened immune system leading to infections'
-                '\n• Muscle wasting and loss of strength'
-                '\n• Delayed wound healing'
-                '\n• Nutrient deficiencies and anemia'
-                '\n• Growth and developmental delays in children'
-                '\n\nTimely nutritional support and balanced diet are crucial to address undernutrition.',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(height: 24),
-              Text(
-                'Balanced Nutrition',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Maintaining a balanced nutrition ensures adequate calorie intake matching energy expenditure. This supports:'
-                '\n\n• Healthy body weight'
-                '\n• Proper immune function'
-                '\n• Muscle maintenance and strength'
-                '\n• Overall physical and mental well-being',
-                style: TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

@@ -1,4 +1,3 @@
-// CaloriesChartWeekCard.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -21,34 +20,50 @@ class _WeeklyCaloriesChartCardState extends State<WeeklyCaloriesChartCard> {
   void initState() {
     super.initState();
     _loadBmr();
-
-    final today = DateTime.now();
-    final yesterday = today.subtract(const Duration(days: 1));
-    final start = yesterday.subtract(const Duration(days: 7));
-    final startStr = dateFormat.format(start);
-    final endStr = dateFormat.format(yesterday);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<Caloriesprovider>().fetchWeekData(startStr, endStr);
-    });
+    _fetchWeekDataAndSave();
   }
 
   Future<void> _loadBmr() async {
     final prefs = await SharedPreferences.getInstance();
     final storedBmr = prefs.getInt('bmr');
-    if (storedBmr != null) {
+    if (storedBmr != null && mounted) {
       setState(() {
         bmr = storedBmr;
       });
     }
   }
 
-  Future<void> _saveDailyCaloriesMap(List<_DayCalories> chartData, List<DateTime> fullWeek) async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _fetchWeekDataAndSave() async {
+    final today = DateTime.now();
+    final yesterday = today.subtract(const Duration(days: 1));
+    final monday = yesterday.subtract(Duration(days: yesterday.weekday - 1));
+    final startStr = dateFormat.format(monday);
+    final endStr = dateFormat.format(yesterday);
 
-    for (int i = 0; i < chartData.length; i++) {
-      final key = dateFormat.format(fullWeek[i]);
-      await prefs.setInt('daily_total_calories_$key', chartData[i].calories);
+    final fullWeek = List.generate(8, (i) => monday.add(Duration(days: i)));
+
+    // Carica i dati salvati da SharedPreferences nel provider
+    await context.read<Caloriesprovider>().loadDailyCaloriesFromPrefs(fullWeek);
+
+    // Chiamata fetchWeekData senza await perché è void
+    context.read<Caloriesprovider>().fetchWeekData(startStr, endStr);
+
+    // Piccola attesa per sicurezza che i dati si aggiornino
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    final weekData = context.read<Caloriesprovider>().weeklyCalories;
+
+    final Map<String, int> dailyTotals = {};
+    for (final entry in weekData) {
+      final key = dateFormat.format(entry.date);
+      dailyTotals[key] = (dailyTotals[key] ?? 0) + entry.value;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    for (final date in fullWeek) {
+      final key = dateFormat.format(date);
+      final value = dailyTotals[key] ?? 0;
+      await prefs.setInt('daily_total_calories_$key', value);
     }
   }
 
@@ -90,8 +105,6 @@ class _WeeklyCaloriesChartCardState extends State<WeeklyCaloriesChartCard> {
       return _DayCalories(day: label, calories: value, color: color);
     }).toList();
 
-    _saveDailyCaloriesMap(chartData, fullWeek);
-
     return Card(
       margin: const EdgeInsets.all(16),
       child: Column(
@@ -110,13 +123,13 @@ class _WeeklyCaloriesChartCardState extends State<WeeklyCaloriesChartCard> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: SfCartesianChart(
-              title: ChartTitle(text: 'Weekly Calories'),
+              title: const ChartTitle(text: 'Weekly Calories'),
               primaryXAxis: CategoryAxis(),
-              primaryYAxis: NumericAxis(
+              primaryYAxis: const NumericAxis(
                 title: AxisTitle(text: 'Calories (kcal)'),
               ),
               tooltipBehavior: TooltipBehavior(enable: true),
-              legend: Legend(isVisible: false),
+              legend: const Legend(isVisible: false),
               series: <CartesianSeries<_DayCalories, String>>[
                 ColumnSeries<_DayCalories, String>(
                   dataSource: chartData,
@@ -149,7 +162,8 @@ class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
 
-  const _LegendItem({required this.color, required this.label});
+  const _LegendItem({required this.color, required this.label, Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {

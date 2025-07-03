@@ -1,71 +1,66 @@
-
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/CaloriesData.dart';
 import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/WEEK/CaloriesWeekData.dart';
 import 'package:werable_project/IMPACT/Login_server.dart';
 
-
 class Caloriesprovider extends ChangeNotifier {
-
- 
-  //This serves as database of the application
   List<Caloriesdata> calories = [];
   List<CaloriesWeekData> weeklyCalories = [];
 
+  // Mappa di calorie giornaliere salvate
+  Map<String, int> dailyCaloriesMap = {};
 
-  //Method to fetch step data from the server
+  // Metodo esistente per dati da server
   void fetchData(String day) async {
-
-    //Get the response
     final data = await Impact.fetchCaloriesData(day);
-
-    //if OK parse the response adding all the elements to the list, otherwise do nothing
     if (data != null) {
       for (var i = 0; i < data['data']['data'].length; i++) {
         calories.add(
-            Caloriesdata.fromJson(data['data']['date'], data['data']['data'][i]));
-      } //for
-
-      //remember to notify the listeners
+          Caloriesdata.fromJson(data['data']['date'], data['data']['data'][i]),
+        );
+      }
       notifyListeners();
-    }//if
-
-  }//fetchStepData
-
+    }
+  }
 
   void fetchWeekData(String startDate, String endDate) async {
-  final data = await Impact.fetchCaloriesWeekData(startDate, endDate);
-  if (data != null) {
-    weeklyCalories.clear();
+    final data = await Impact.fetchCaloriesWeekData(startDate, endDate);
+    if (data != null) {
+      weeklyCalories.clear();
 
-    for (var day in data['data']) {
-      String date = day['date'];
-      for (var item in day['data']) {
-        weeklyCalories.add(CaloriesWeekData.fromJsonWithDate(date, item));
+      for (var day in data['data']) {
+        String date = day['date'];
+        for (var item in day['data']) {
+          weeklyCalories.add(CaloriesWeekData.fromJsonWithDate(date, item));
+        }
       }
+      notifyListeners();
     }
+  }
 
+  // Nuova funzione: carica da SharedPreferences i dati giornalieri salvati
+  Future<void> loadDailyCaloriesFromPrefs(List<DateTime> weekDates) async {
+    final prefs = await SharedPreferences.getInstance();
+    Map<String, int> loadedData = {};
+
+    for (final date in weekDates) {
+      final key = date.toIso8601String().split('T').first;
+      loadedData[key] = prefs.getInt('daily_total_calories_$key') ?? 0;
+    }
+    dailyCaloriesMap = loadedData;
     notifyListeners();
   }
-}
 
+  // Getter per i dati giornalieri
+  int getDailyCalories(String dateKey) {
+    return dailyCaloriesMap[dateKey] ?? 0;
+  }
 
-  //Method to clear the "memory"
   void clearData() {
     calories.clear();
     weeklyCalories.clear();
+    dailyCaloriesMap.clear();
     notifyListeners();
-  }//clearData
-
-
-
-
-
- 
-
-
-
+  }
 }
-
-  
-  
