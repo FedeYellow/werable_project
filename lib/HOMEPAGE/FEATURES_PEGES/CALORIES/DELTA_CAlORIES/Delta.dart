@@ -25,6 +25,10 @@ class _WeeklyCaloriesDeltaChartCardState
       return const Center(child: CircularProgressIndicator());
     }
 
+    // 📱 Responsive font size based on screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+    final baseFontSize = screenWidth * 0.03;
+
     final chartData = _generateChartData(provider);
     final totalDelta = chartData.fold<int>(0, (sum, item) => sum + item.delta);
 
@@ -46,13 +50,14 @@ class _WeeklyCaloriesDeltaChartCardState
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // 🔍 Title and info icon
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Weekly Calorie Delta',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: baseFontSize + 2,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -71,13 +76,21 @@ class _WeeklyCaloriesDeltaChartCardState
                 ),
               ],
             ),
+            // 📊 Calorie Delta Chart
             SfCartesianChart(
-              primaryXAxis: CategoryAxis(),
+              primaryXAxis: CategoryAxis(
+                labelStyle: TextStyle(
+                  fontSize: baseFontSize, // X-axis labels
+                ),
+              ),
               primaryYAxis: NumericAxis(
                 title: AxisTitle(text: 'Calorie Delta (kcal)'),
                 minimum: -5000,
                 maximum: 5000,
                 interval: 1000,
+                labelStyle: TextStyle(
+                  fontSize: baseFontSize, // Y-axis labels
+                ),
                 plotBands: <PlotBand>[
                   PlotBand(
                     isVisible: true,
@@ -98,19 +111,24 @@ class _WeeklyCaloriesDeltaChartCardState
                   color: Colors.blue,
                   pointColorMapper: (data, _) =>
                       data.delta >= 0 ? Colors.green : Colors.red,
-                  dataLabelSettings: const DataLabelSettings(
+                  dataLabelSettings: DataLabelSettings(
                     isVisible: true,
                     labelAlignment: ChartDataLabelAlignment.top,
+                    textStyle: TextStyle(
+                      fontSize: baseFontSize * 0.5, // Data labels
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
+            // 📘 Total Delta Summary
             Text(
               'Total Calorie Delta: $totalDeltaString kcal ($nutritionStatus)',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: baseFontSize + 1,
                 color: Colors.black,
               ),
             ),
@@ -120,6 +138,7 @@ class _WeeklyCaloriesDeltaChartCardState
     );
   }
 
+  // 📆 Generate chart data for each day of the week
   List<_DayDelta> _generateChartData(Caloriesprovider provider) {
     final now = DateTime.now();
     final yesterday = now.subtract(const Duration(days: 1));
