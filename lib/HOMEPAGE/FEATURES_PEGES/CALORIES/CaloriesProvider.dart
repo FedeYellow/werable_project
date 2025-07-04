@@ -8,7 +8,8 @@ class Caloriesprovider extends ChangeNotifier {
   List<Caloriesdata> calories = [];
   List<CaloriesWeekData> weeklyCalories = [];
 
-  Map<String, int> dailyCaloriesMap = {};
+  Map<String, int> dailyCaloriesMap = {}; // Calories OUT
+  Map<String, int> diaryCaloriesMap = {}; // Calories IN
   bool isWeekDataLoaded = false;
 
   void fetchData(String day) async {
@@ -61,14 +62,36 @@ class Caloriesprovider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadDiaryCaloriesFromPrefs(List<DateTime> weekDates) async {
+  final prefs = await SharedPreferences.getInstance();
+  diaryCaloriesMap.clear(); // <- pulisce i dati esistenti
+
+  for (final date in weekDates) {
+    final key = date.toIso8601String().split('T').first;
+    final diaryKey = 'diary_calories_$key';
+    final value = prefs.getInt(diaryKey) ?? 0;
+
+    if (value > 0) {
+      diaryCaloriesMap[key] = value;
+    }
+  }
+
+  notifyListeners();
+  }
+
   int getDailyCalories(String dateKey) {
     return dailyCaloriesMap[dateKey] ?? 0;
+  }
+
+  int getDiaryCalories(String dateKey) {
+    return diaryCaloriesMap[dateKey] ?? 0;
   }
 
   void clearData() {
     calories.clear();
     weeklyCalories.clear();
     dailyCaloriesMap.clear();
+    diaryCaloriesMap.clear();
     isWeekDataLoaded = false;
     notifyListeners();
   }

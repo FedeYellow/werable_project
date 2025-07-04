@@ -79,7 +79,7 @@ class HomePage extends StatelessWidget {
                 CaloricRequirementCard(),
                 WeeklyCaloriesChartCard(),
                 WeeklyCaloriesDeltaChartCard(),
-                FoodDiaryCard(),
+                DiaryCard(),
               
 
               ],

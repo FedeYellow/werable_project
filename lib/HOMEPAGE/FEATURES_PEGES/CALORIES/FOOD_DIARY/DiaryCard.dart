@@ -1,264 +1,106 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/CaloriesProvider.dart';
+import 'package:werable_project/HOMEPAGE/FEATURES_PEGES/CALORIES/FOOD_DIARY/DiaryPage.dart';
 
-class FoodDiaryCard extends StatefulWidget {
-  const FoodDiaryCard({super.key});
+class DiaryCard extends StatefulWidget {
+  const DiaryCard({super.key});
 
   @override
-  State<FoodDiaryCard> createState() => _FoodDiaryCardState();
+  State<DiaryCard> createState() => _DiaryCardState();
 }
 
-class _FoodDiaryCardState extends State<FoodDiaryCard> {
+class _DiaryCardState extends State<DiaryCard> {
   final dateFormat = DateFormat('yyyy-MM-dd');
-  final displayFormat = DateFormat('EEE, MMM d, yyyy');
-
-  DateTime selectedDate = DateTime.now();
-  String selectedMeal = 'Breakfast';
-
-  final meals = ['Breakfast', 'Lunch', 'Snack', 'Dinner'];
-
-  Map<String, List<_FoodEntry>> mealEntries = {
-    'Breakfast': [],
-    'Lunch': [],
-    'Snack': [],
-    'Dinner': [],
-  };
-
-  int totalCaloriesIn = 0;
-
-  final TextEditingController foodNameController = TextEditingController();
-  final TextEditingController caloriesController = TextEditingController();
+  final labelFormat = DateFormat.E('en_US');
+  late final List<DateTime> fullWeek;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadFoodEntries();
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final monday = yesterday.subtract(Duration(days: yesterday.weekday - 1));
+    fullWeek = List.generate(8, (i) => monday.add(Duration(days: i)));
+    _loadDataFromPrefs();
   }
 
-  Future<void> _loadFoodEntries() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'food_entries_${dateFormat.format(selectedDate)}';
-
-    final savedData = prefs.getString(key);
-    if (savedData == null) {
-      // no data yet
+  Future<void> _loadDataFromPrefs() async {
+    final provider = Provider.of<Caloriesprovider>(context, listen: false);
+    provider.diaryCaloriesMap.clear(); // 🔁 Pulisce i dati vecchi
+    await provider.loadDiaryCaloriesFromPrefs(fullWeek);
+    if (mounted) {
       setState(() {
-        mealEntries = {
-          for (var meal in meals) meal: <_FoodEntry>[],
-        };
-        totalCaloriesIn = 0;
+        _isLoading = false;
       });
-      return;
-    }
-
-    final Map<String, dynamic> decoded = Map<String, dynamic>.from(
-      Uri.splitQueryString(savedData)
-    );
-
-    Map<String, List<_FoodEntry>> loadedEntries = {};
-
-    int total = 0;
-
-    for (var meal in meals) {
-      final entriesRaw = decoded[meal] as String?;
-      if (entriesRaw == null || entriesRaw.isEmpty) {
-        loadedEntries[meal] = [];
-        continue;
-      }
-
-      final List<_FoodEntry> list = entriesRaw
-          .split(';;')
-          .map((e) {
-            final parts = e.split('|');
-            final name = parts[0];
-            final cals = int.tryParse(parts[1]) ?? 0;
-            total += cals;
-            return _FoodEntry(name: name, calories: cals);
-          })
-          .toList();
-
-      loadedEntries[meal] = list;
-    }
-
-    setState(() {
-      mealEntries = loadedEntries;
-      totalCaloriesIn = total;
-    });
-  }
-
-  Future<void> _saveFoodEntries() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = 'food_entries_${dateFormat.format(selectedDate)}';
-
-    Map<String, String> toSave = {};
-
-    for (var meal in meals) {
-      final entries = mealEntries[meal]!;
-      toSave[meal] = entries.map((e) => '${e.name}|${e.calories}').join(';;');
-    }
-
-    final encoded = Uri(queryParameters: toSave).query;
-
-    await prefs.setString(key, encoded);
-    await prefs.setInt('daily_calories_in_${dateFormat.format(selectedDate)}', totalCaloriesIn);
-  }
-
-  void _addFoodEntry() {
-    final name = foodNameController.text.trim();
-    final calories = int.tryParse(caloriesController.text.trim()) ?? 0;
-
-    if (name.isEmpty || calories <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid food name and calories')),
-      );
-      return;
-    }
-
-    setState(() {
-      mealEntries[selectedMeal]!.add(_FoodEntry(name: name, calories: calories));
-      totalCaloriesIn += calories;
-      foodNameController.clear();
-      caloriesController.clear();
-    });
-
-    _saveFoodEntries();
-  }
-
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now(),
-    );
-
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-      _loadFoodEntries();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final diaryCaloriesMap =
+        context.watch<Caloriesprovider>().diaryCaloriesMap;
+
+    final chartData = fullWeek.map((date) {
+      final label = '${labelFormat.format(date)}\n${date.day}';
+      final key = dateFormat.format(date);
+      final value = diaryCaloriesMap[key] ?? 0;
+      return _DayCalories(day: label, calories: value);
+    }).toList();
+
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Date selector row
-            Row(
-              children: [
-                Text(
-                  'Food Diary - ${displayFormat.format(selectedDate)}',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: _selectDate,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Meal selector dropdown
-            DropdownButton<String>(
-              value: selectedMeal,
-              items: meals
-                  .map((meal) => DropdownMenuItem(
-                        value: meal,
-                        child: Text(meal),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    selectedMeal = value;
-                  });
-                }
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            Text(
-              'Total Calories In: $totalCaloriesIn kcal',
-              style: const TextStyle(fontSize: 16),
-            ),
-
-            const SizedBox(height: 12),
-
-            const Text('Entries:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-
-            if (mealEntries[selectedMeal]!.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  'No entries for this meal.',
-                  style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
-                ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: mealEntries[selectedMeal]!.length,
-                itemBuilder: (context, index) {
-                  final entry = mealEntries[selectedMeal]![index];
-                  return ListTile(
-                    title: Text(entry.name),
-                    trailing: Text('${entry.calories} kcal'),
-                    onLongPress: () {
-                      // Optional: remove entry on long press
-                      setState(() {
-                        totalCaloriesIn -= entry.calories;
-                        mealEntries[selectedMeal]!.removeAt(index);
-                      });
-                      _saveFoodEntries();
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  const Text('Food Diary',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  SfCartesianChart(
+                    title: const ChartTitle(text: 'Calorie introdotte'),
+                    primaryXAxis: CategoryAxis(),
+                    primaryYAxis: const NumericAxis(
+                      title: AxisTitle(text: 'Calorie (kcal)'),
+                    ),
+                    tooltipBehavior: TooltipBehavior(enable: true),
+                    series: <CartesianSeries<_DayCalories, String>>[
+                      ColumnSeries<_DayCalories, String>(
+                        dataSource: chartData,
+                        xValueMapper: (data, _) => data.day,
+                        yValueMapper: (data, _) => data.calories,
+                        dataLabelSettings:
+                            const DataLabelSettings(isVisible: true),
+                        color: Colors.orange,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const FoodDiaryPage()),
+                      );
+                      await _loadDataFromPrefs(); // 🔁 Ricarica dati aggiornati
                     },
-                  );
-                },
+                    child: const Text('Mostra Diario'),
+                  ),
+                ],
               ),
-
-            const Divider(height: 24),
-
-            const Text('Add Food Entry:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-
-            TextField(
-              controller: foodNameController,
-              decoration: const InputDecoration(labelText: 'Food Name'),
-            ),
-
-            TextField(
-              controller: caloriesController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Calories'),
-            ),
-
-            const SizedBox(height: 12),
-
-            Center(
-              child: ElevatedButton(
-                onPressed: _addFoodEntry,
-                child: const Text('Add Entry'),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 }
 
-class _FoodEntry {
-  final String name;
+class _DayCalories {
+  final String day;
   final int calories;
 
-  _FoodEntry({required this.name, required this.calories});
+  _DayCalories({required this.day, required this.calories});
 }
